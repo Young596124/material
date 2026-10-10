@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.material.modules.system.mapper.SysUserMapper">
+
+    <resultMap type="SysUser" id="SysUserResult">
+        <id     property="userId"      column="user_id"      />
+        <result property="deptId"       column="dept_id"      />
+        <result property="userName"    column="user_name"    />
+        <result property="nickName"     column="nick_name"    />
+        <result property="employeeNo"  column="employee_no"  />
+        <result property="gender"      column="gender"       />
+        <result property="phonenumber" column="phonenumber" />
+        <result property="password"     column="password"     />
+        <result property="status"      column="status"       />
+        <result property="delFlag"     column="del_flag"     />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime" column="create_time"  />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime" column="update_time"  />
+    </resultMap>
+
+    <sql id="selectUserVo">
+        select user_id, dept_id, user_name, nick_name, employee_no, gender, phonenumber,
+               password, status, del_flag, create_by, create_time, update_by, update_time
+        from sys_user
+    </sql>
+
+    <select id="selectUserByUserName" parameterType="String" resultMap="SysUserResult">
+        <include refid="selectUserVo"/>
+        where user_name = #{userName} and del_flag = '0'
+    </select>
+
+    <select id="selectUserList" parameterType="SysUser" resultMap="SysUserResult">
+        <include refid="selectUserVo"/>
+        <where>
+            del_flag = '0'
+            <if test="user.userName != null and user.userName != ''">
+                AND user_name like concat('%', #{user.userName}, '%')
+            </if>
+            <if test="user.nickName != null and user.nickName != ''">
+                AND nick_name like concat('%', #{user.nickName}, '%')
+            </if>
+            <if test="user.phonenumber != null and user.phonenumber != ''">
+                AND phonenumber like concat('%', #{user.phonenumber}, '%')
+            </if>
+            <if test="user.status != null and user.status != ''">
+                AND status = #{user.status}
+            </if>
+            <if test="user.employeeNo != null and user.employeeNo != ''">
+                AND employee_no like concat('%', #{user.employeeNo}, '%')
+            </if>
+        </where>
+        order by user_id
+    </select>
+
+</mapper>
