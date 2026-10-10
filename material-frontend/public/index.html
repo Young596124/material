@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+    <title>C9无尘室线边仓物料系统</title>
+    <style>
+      html, body, #app { height: 100%; margin: 0; padding: 0; }
+      /* 首屏加载动画 */
+      .loading-mask { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #f0f2f5; }
+      .loading-spinner { width: 40px; height: 40px; border: 4px solid #dcdfe6; border-top-color: #409eff; border-radius: 50%; animation: rotate 0.8s linear infinite; }
+      @keyframes rotate { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <strong>很抱歉,本系统需要启用 JavaScript 才能正常运行,请先启用浏览器 JavaScript。</strong>
+    </noscript>
+    <div id="app">
+      <div class="loading-mask">
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
+  </body>
+</html>
