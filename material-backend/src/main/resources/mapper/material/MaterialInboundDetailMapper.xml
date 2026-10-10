@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.material.modules.material.mapper.MaterialInboundDetailMapper">
+
+    <resultMap type="com.material.modules.material.domain.MaterialInboundDetail" id="MaterialInboundDetailResult">
+        <id     property="id"                 column="id"                  />
+        <result property="inboundId"           column="inbound_id"          />
+        <result property="materialBaseId"     column="material_base_id"    />
+        <result property="materialName"       column="material_name"       />
+        <result property="sourceType"         column="source_type"         />
+        <result property="location"           column="location"            />
+        <result property="status"             column="status"              />
+        <result property="remainingQuantity"  column="remaining_quantity"  />
+        <result property="inboundQuantity"    column="inbound_quantity"    />
+        <result property="createBy"           column="create_by"           />
+        <result property="createTime"         column="create_time"         />
+    </resultMap>
+
+    <sql id="selectDetailVo">
+        select id, inbound_id, material_base_id, material_name, source_type, location, status,
+               remaining_quantity, inbound_quantity, create_by, create_time
+        from material_inbound_detail
+    </sql>
+
+    <select id="selectDetailListByInboundId" resultMap="MaterialInboundDetailResult">
+        <include refid="selectDetailVo"/>
+        where inbound_id = #{inboundId}
+        order by id asc
+    </select>
+
+    <select id="selectInboundDataList" resultMap="MaterialInboundDetailResult">
+        <include refid="selectDetailVo"/>
+        <where>
+            <if test="detail.materialName != null and detail.materialName != ''">
+                AND material_name like concat('%', #{detail.materialName}, '%')
+            </if>
+            <if test="detail.sourceType != null and detail.sourceType != ''">
+                AND source_type = #{detail.sourceType}
+            </if>
+            <if test="detail.location != null and detail.location != ''">
+                AND location like concat('%', #{detail.location}, '%')
+            </if>
+            <if test="detail.status != null and detail.status != ''">
+                AND status = #{detail.status}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+</mapper>
