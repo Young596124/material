@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.material.modules.material.mapper.MaterialInboundMapper">
+
+    <resultMap type="com.material.modules.material.domain.MaterialInbound" id="MaterialInboundResult">
+        <id     property="id"           column="id"            />
+        <result property="inboundCode"   column="inbound_code"  />
+        <result property="userId"        column="user_id"       />
+        <result property="userName"      column="user_name"     />
+        <result property="inboundDate"   column="inbound_date"  />
+        <result property="description"   column="description"   />
+        <result property="createBy"      column="create_by"     />
+        <result property="createTime"    column="create_time"   />
+    </resultMap>
+
+    <sql id="selectInboundVo">
+        select id, inbound_code, user_id, user_name, inbound_date, description, create_by, create_time
+        from material_inbound
+    </sql>
+
+    <select id="selectInboundList" resultMap="MaterialInboundResult">
+        <include refid="selectInboundVo"/>
+        <where>
+            <if test="inbound.inboundCode != null and inbound.inboundCode != ''">
+                AND inbound_code like concat('%', #{inbound.inboundCode}, '%')
+            </if>
+            <if test="inbound.userName != null and inbound.userName != ''">
+                AND user_name like concat('%', #{inbound.userName}, '%')
+            </if>
+            <if test="inbound.beginDate != null and inbound.beginDate != ''">
+                AND inbound_date &gt;= #{inbound.beginDate}
+            </if>
+            <if test="inbound.endDate != null and inbound.endDate != ''">
+                AND inbound_date &lt;= #{inbound.endDate}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+</mapper>
