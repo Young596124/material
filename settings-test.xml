@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <localRepository>D:/package</localRepository>
+    <pluginGroups></pluginGroups>
+    <proxies></proxies>
+
+    <servers>
+
+        <server>
+            <id>auto-trial-snapshot</id>
+        </server>
+
+        <server>
+            <id>auto-trial-release</id>
+        </server>
+
+
+    </servers>
+
+    <mirrors>
+        <mirror>
+            <id>central</id>
+            <mirrorOf>*,!auto-trial,!product,!opensource,!plugins,!plugins1,!plugins2,!plugins3,!artifactory_product_maven,!huawei-case</mirrorOf>
+            <url>https://mirrors.tools.huawei.com/maven/</url>
+        </mirror>
+    </mirrors>
+
+
+    <profiles>
+        <profile>
+            <id>JDK1.8</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <jdk>1.8</jdk>
+            </activation>
+
+            <properties>
+                <maven.compiler.source>1.8</maven.compiler.source>
+                <maven.compiler.target>1.8</maven.compiler.target>
+                <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+            </properties>
+
+        </profile>
+
+
+        <profile>
+            <id>central</id>
+            <repositories>
+                <!-- 添加开源中心仓地址 -->
+                <repository>
+                    <id>opensource</id>
+                    <url>https://cmc.centralrepo.rnd.huawei.com/maven/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+                <!-- 添加自研中心仓地址 -->
+                <repository>
+                    <id>auto-trial</id>
+                    <name>auto-trial</name>
+                    <url>https://dgg.maven.repo.cmc.tools.huawei.com/artifactory/Product-Auto-Trial-snapshot/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </repository>
+
+                <repository>
+                    <id>product</id>
+                    <url>https://dgg.maven.repo.cmc.tools.huawei.com/artifactory/sz-maven-product</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </repository>
+				
+				 <repository>
+                    <id>artifactory_product_maven</id>
+                    <url>https://language.cloudartifact.dgg.dragon.tools.huawei.com/artifactory/product_maven/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </repository>
+				
+				<repository>
+                    <id>huawei-case</id>
+                    <url>https://maven.cloudartifact.lfg.dragon.tools.huawei.com/artifactory/cbu-maven-public/</url>
+                </repository>
+				
+            </repositories>
+
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>opensource</id>
+                    <url>https://cmc.centralrepo.rnd.huawei.com/maven/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+                <pluginRepository>
+                    <id>plugins</id>
+                    <url>https://dgg.maven.repo.cmc.tools.huawei.com/artifactory/sz-maven-public</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+
+                <pluginRepository>
+                    <id>plugins1</id>
+                    <url>https://cmc.centralrepo.rnd.huawei.com/artifactory/product_maven/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+
+                <pluginRepository>
+                    <id>plugins2</id>
+                    <url>https://dgg.maven.repo.cmc.tools.huawei.com/artifactory/sz-maven-product</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+
+                <pluginRepository>
+                    <id>plugins3</id>
+                    <url>https://cmc.centralrepo.rnd.huawei.com/maven/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+
+            </pluginRepositories>
+
+        </profile>
+
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>central</activeProfile>
+    </activeProfiles>
+
+</settings>
