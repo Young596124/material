@@ -253,4 +253,81 @@ CREATE TABLE `material_outbound_detail` (
   `create_by`          VARCHAR(64)  DEFAULT '' COMMENT '创建者',
   `create_time`        DATETIME      DEFAULT NULL COMMENT '创建时间',
   PRIMARY KEY (`id`)
+
+
+  -- 给 warehouse_material_base 增加需求人字段
+ALTER TABLE `warehouse_material_base` ADD COLUMN `applicant_name` VARCHAR(100) DEFAULT NULL COMMENT '需求人' AFTER `material_name`;
+
+
+-- =====================================
+-- 角色权限模块 增量脚本(在已有 material_db 上执行)
+-- =====================================
+USE `material_db`;
+
+-- ----------------------------
+-- 给 sys_user 增加 role_id 字段(一个用户一个角色)
+-- ----------------------------
+ALTER TABLE `sys_user` ADD COLUMN `role_id` BIGINT(20) DEFAULT NULL COMMENT '角色ID' AFTER `dept_id`;
+
+-- ----------------------------
+-- 角色表
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_role`;
+CREATE TABLE `sys_role` (
+  `role_id`     BIGINT(20)  NOT NULL AUTO_INCREMENT COMMENT '角色ID',
+  `role_name`   VARCHAR(30) NOT NULL COMMENT '角色名称',
+  `role_key`    VARCHAR(100) NOT NULL COMMENT '角色权限字符串(admin/common等)',
+  `role_sort`   INT(4)      DEFAULT 0 COMMENT '显示顺序',
+  `data_scope`  CHAR(1)     DEFAULT '1' COMMENT '数据范围(1全部 2自定义)',
+  `status`      CHAR(1)     DEFAULT '0' COMMENT '状态(0正常 1停用)',
+  `del_flag`    CHAR(1)     DEFAULT '0' COMMENT '删除标志(0存在 2删除)',
+  `create_by`   VARCHAR(64) DEFAULT '' COMMENT '创建者',
+  `create_time` DATETIME    DEFAULT NULL COMMENT '创建时间',
+  `update_by`   VARCHAR(64) DEFAULT '' COMMENT '更新者',
+  `update_time` DATETIME    DEFAULT NULL COMMENT '更新时间',
+  `remark`      VARCHAR(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`role_id`),
+  UNIQUE KEY `uk_role_key` (`role_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+
+-- 初始角色:超级管理员 + 普通用户
+INSERT INTO `sys_role` (`role_id`, `role_name`, `role_key`, `role_sort`, `status`, `del_flag`, `create_by`, `create_time`, `remark`) VALUES
+(1, '超级管理员', 'admin', 1, '0', '0', 'admin', NOW(), '拥有所有权限'),
+(2, '普通用户', 'common', 2, '0', '0', 'admin', NOW(), '基础物料操作权限');
+
+-- ----------------------------
+-- 角色-菜单关联表
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_role_menu`;
+CREATE TABLE `sys_role_menu` (
+  `role_id` BIGINT(20) NOT NULL COMMENT '角色ID',
+  `menu_id` BIGINT(20) NOT NULL COMMENT '菜单ID',
+  PRIMARY KEY (`role_id`, `menu_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色和菜单关联表';
+
+-- 超级管理员(role_id=1):分配所有菜单
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES
+(1, 1), (1, 100), (1, 101), (1, 102),       -- 系统管理全部
+(1, 2), (1, 2000), (1, 2001), (1, 2002), (1, 2003), (1, 2004), (1, 2005), (1, 2006), (1, 2007),
+-- 角色管理(菜单ID稍后插入,先不包含)
+(1, 3);
+
+-- 普通用户(role_id=2):只分配物料管理下的编码申请/入库/出库
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES
+(2, 2), (2, 2000), (2, 2002), (2, 2005);
+
+-- ----------------------------
+-- 更新 admin 用户的 role_id
+-- ----------------------------
+UPDATE `sys_user` SET `role_id` = 1 WHERE `user_id` = 1;
+
+-- ----------------------------
+-- 给菜单表增加"角色管理"菜单项(挂在系统管理下)
+-- ----------------------------
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`) VALUES
+(3, '角色管理', 1, 4, 'role', 'system/role/index', NULL, '1', '0', 'C', '0', '0', 'system:role:list', 'peoples', 'admin', NOW());
+
+-- 给超级管理员补上角色管理菜单权限
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (1, 3);
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物料出库子表';
