@@ -41,4 +41,13 @@
         order by parent_id, order_num
     </select>
 
+    <select id="selectMenuByMenuIds" resultMap="SysMenuResult">
+        <include refid="selectMenuVo"/>
+        where visible = '0' and status = '0'
+          and menu_id in
+        <foreach collection="menuIds" item="menuId" open="(" separator="," close=")">
+            #{menuId}
+        </foreach>
+        order by parent_id, order_num
+    </select>
 </mapper>
