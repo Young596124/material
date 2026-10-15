@@ -16,4 +16,9 @@ public interface MaterialOutboundMapper extends BaseMapper<MaterialOutbound>
      * 分页查询出库记录
      */
     Page<MaterialOutbound> selectOutboundList(Page<MaterialOutbound> page, @Param("outbound") MaterialOutbound outbound);
+
+    /**
+     * 查询出库记录（不分页，用于导出）
+     */
+    List<MaterialOutbound> selectOutboundExportList(@Param("outbound") MaterialOutbound outbound);
 }
