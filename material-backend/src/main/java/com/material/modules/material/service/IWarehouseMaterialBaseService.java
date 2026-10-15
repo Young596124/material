@@ -24,4 +24,10 @@ public interface IWarehouseMaterialBaseService
 
     /** 修改 */
     int updateBase(WarehouseMaterialBase base);
+
+    /** 批量导入（物料编码存在则更新，否则新增） */
+    int importBatch(List<WarehouseMaterialBase> list);
+
+    /** 将列表中来源类型字典值转换为标签（导出时使用） */
+    List<WarehouseMaterialBase> convertSourceTypeValueToLabel(List<WarehouseMaterialBase> list);
 }
