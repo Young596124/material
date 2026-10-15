@@ -3,6 +3,9 @@ package com.material.common.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import javax.crypto.SecretKey;
 
 import java.util.Date;
@@ -11,19 +14,30 @@ import java.util.Map;
 /**
  * Jwt工具类
  */
+@Component
 public class JwtUtils
 {
     /** 过期时间（默认30分钟） */
-    public static final long EXPIRE = 30 * 60 * 1000L;
+    public static long EXPIRE;
 
     /** 密钥 */
-    public static final String SECRET = "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789";
+    public static String SECRET;
 
     private static SecretKey key;
 
-    static
+
+    /** 注入密钥 —— @Value 必须标在非静态 setter 上 */
+    @Value("${token.secret}")
+    public void setSecret(String secret)
     {
-        key = Keys.hmacShaKeyFor(SECRET.getBytes());
+        key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
+
+    /** 注入过期时间（分钟 → 毫秒） */
+    @Value("${token.expireTime:30}")
+    public void setExpireTime(long minutes)
+    {
+        EXPIRE = minutes * 60 * 1000L;
     }
 
     /**
