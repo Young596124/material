@@ -23,4 +23,9 @@ public interface MaterialInboundDetailMapper extends BaseMapper<MaterialInboundD
      * 分页查询入库数据管理列表
      */
     Page<MaterialInboundDetail> selectInboundDataList(Page<MaterialInboundDetail> page, @Param("detail") MaterialInboundDetail detail);
+
+    /**
+     * 根据入库主表ID批量查询明细列表（用于导出）
+     */
+    List<MaterialInboundDetail> selectDetailListByInboundIds(@Param("inboundIds") List<Long> inboundIds);
 }
