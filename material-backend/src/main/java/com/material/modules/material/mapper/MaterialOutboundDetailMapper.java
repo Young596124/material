@@ -23,4 +23,9 @@ public interface MaterialOutboundDetailMapper extends BaseMapper<MaterialOutboun
      * 分页查询出库数据管理列表
      */
     Page<MaterialOutboundDetail> selectOutboundDataList(Page<MaterialOutboundDetail> page, @Param("detail") MaterialOutboundDetail detail);
+
+    /**
+     * 根据出库主表ID批量查询明细列表（用于导出）
+     */
+    List<MaterialOutboundDetail> selectDetailListByOutboundIds(@Param("outboundIds") List<Long> outboundIds);
 }
