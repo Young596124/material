@@ -28,6 +28,15 @@
         order by id asc
     </select>
 
+    <select id="selectDetailListByInboundIds" resultMap="MaterialInboundDetailResult">
+        <include refid="selectDetailVo"/>
+        where inbound_id in
+        <foreach collection="inboundIds" item="inboundId" open="(" separator="," close=")">
+            #{inboundId}
+        </foreach>
+        order by inbound_id asc, id asc
+    </select>
+
     <select id="selectInboundDataList" resultMap="MaterialInboundDetailResult">
         <include refid="selectDetailVo"/>
         <where>
