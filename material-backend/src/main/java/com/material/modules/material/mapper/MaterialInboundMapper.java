@@ -16,4 +16,9 @@ public interface MaterialInboundMapper extends BaseMapper<MaterialInbound>
      * 分页查询入库记录
      */
     Page<MaterialInbound> selectInboundList(Page<MaterialInbound> page, @Param("inbound") MaterialInbound inbound);
+
+    /**
+     * 查询入库记录（不分页，用于导出）
+     */
+    List<MaterialInbound> selectInboundExportList(@Param("inbound") MaterialInbound inbound);
 }
