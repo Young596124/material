@@ -20,14 +20,17 @@ public class WarehouseMaterialBase extends BaseEntity
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /** 申请ID */
-    private Long applicationId;
-
     /** 物料编码 */
     private String materialCode;
 
     /** 物料名称 */
     private String materialName;
+
+    /** 需求人ID */
+    private Long applicantId;
+
+    /** 需求人 */
+    private String applicantName;
 
     /** 物料所属项目系统 */
     private String projectSystem;
@@ -37,6 +40,12 @@ public class WarehouseMaterialBase extends BaseEntity
 
     /** 货位 */
     private String location;
+
+    /** 附件 */
+    private String attachment;
+
+    /** 特殊说明 */
+    private String specialNote;
 
     /** 入库总数 */
     private Integer totalInbound;
