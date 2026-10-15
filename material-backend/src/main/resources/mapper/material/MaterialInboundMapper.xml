@@ -37,4 +37,22 @@
         order by id desc
     </select>
 
+    <select id="selectInboundExportList" resultMap="MaterialInboundResult">
+        <include refid="selectInboundVo"/>
+        <where>
+            <if test="inbound.inboundCode != null and inbound.inboundCode != ''">
+                AND inbound_code like concat('%', #{inbound.inboundCode}, '%')
+            </if>
+            <if test="inbound.userName != null and inbound.userName != ''">
+                AND user_name like concat('%', #{inbound.userName}, '%')
+            </if>
+            <if test="inbound.beginDate != null and inbound.beginDate != ''">
+                AND inbound_date &gt;= #{inbound.beginDate}
+            </if>
+            <if test="inbound.endDate != null and inbound.endDate != ''">
+                AND inbound_date &lt;= #{inbound.endDate}
+            </if>
+        </where>
+        order by id desc
+    </select>
 </mapper>
