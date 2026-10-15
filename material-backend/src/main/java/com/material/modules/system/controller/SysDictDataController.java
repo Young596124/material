@@ -9,6 +9,7 @@ import com.material.modules.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -33,12 +34,53 @@ public class SysDictDataController extends BaseController
     }
 
     /**
-     * 根据字典类型查询字典数据
+     * 根据字典类型查询字典数据（下拉/标签用）
      */
     @GetMapping("/type/{dictType}")
     public AjaxResult dictType(@PathVariable String dictType)
     {
         List<SysDictData> list = dictDataService.selectDictDataByType(dictType);
         return AjaxResult.success(list);
+    }
+
+    /**
+     * 根据 dictCode 查询详情
+     */
+    @GetMapping("/{dictCode}")
+    public AjaxResult getInfo(@PathVariable Long dictCode)
+    {
+        return AjaxResult.success(dictDataService.selectDictDataById(dictCode));
+    }
+
+    /**
+     * 新增字典数据
+     */
+    @PostMapping
+    public AjaxResult add(@RequestBody SysDictData dictData)
+    {
+        return toAjax(dictDataService.insertDictData(dictData));
+    }
+
+    /**
+     * 修改字典数据
+     */
+    @PutMapping
+    public AjaxResult edit(@RequestBody SysDictData dictData)
+    {
+        return toAjax(dictDataService.updateDictData(dictData));
+    }
+
+    /**
+     * 删除字典数据（批量）
+     */
+    @DeleteMapping("/{dictCodes}")
+    public AjaxResult remove(@PathVariable Long[] dictCodes)
+    {
+        return toAjax(dictDataService.deleteDictDataByIds(Arrays.asList(dictCodes)));
+    }
+
+    private AjaxResult toAjax(int rows)
+    {
+        return rows > 0 ? AjaxResult.success() : AjaxResult.error();
     }
 }
