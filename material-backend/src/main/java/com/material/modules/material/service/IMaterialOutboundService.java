@@ -26,4 +26,13 @@ public interface IMaterialOutboundService
 
     /** 分页查询出库数据管理 */
     Page<MaterialOutboundDetail> selectDataList(Page<MaterialOutboundDetail> page, MaterialOutboundDetail detail);
+
+    /** 查询出库记录导出数据（不分页，含明细，来源类型/状态已转字典标签） */
+    List<MaterialOutbound> selectExportList(MaterialOutbound outbound);
+
+    /**
+     * 导出物料出库管理数据
+     * @return
+     */
+    List<MaterialOutboundDetail> selectOutboundDataExportList();
 }
