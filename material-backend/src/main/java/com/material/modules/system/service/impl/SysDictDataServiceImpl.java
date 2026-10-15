@@ -2,12 +2,14 @@ package com.material.modules.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.material.common.utils.SecurityUtils;
 import com.material.modules.system.domain.SysDictData;
 import com.material.modules.system.mapper.SysDictDataMapper;
 import com.material.modules.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -44,5 +46,32 @@ public class SysDictDataServiceImpl implements ISysDictDataService
                                 SysDictData::getStatus, dictData.getStatus())
                         .orderByAsc(SysDictData::getDictSort));
     }
+
+    @Override
+    public SysDictData selectDictDataById(Long dictCode)
+    {
+        return sysDictDataMapper.selectById(dictCode);
+    }
+
+    @Override
+    public int insertDictData(SysDictData dictData)
+    {
+        dictData.setCreateBy(SecurityUtils.getNickName());
+        dictData.setCreateTime(new Date());
+        return sysDictDataMapper.insert(dictData);
+    }
+
+    @Override
+    public int updateDictData(SysDictData dictData)
+    {
+        dictData.setUpdateBy(SecurityUtils.getUsername());
+        dictData.setUpdateTime(new Date());
+        return sysDictDataMapper.updateById(dictData);
+    }
+
+    @Override
+    public int deleteDictDataByIds(List<Long> dictCodes)
+    {
+        return sysDictDataMapper.deleteBatchIds(dictCodes);
+    }
 }
- 
