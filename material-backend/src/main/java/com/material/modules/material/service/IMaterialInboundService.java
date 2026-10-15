@@ -26,4 +26,13 @@ public interface IMaterialInboundService
 
     /** 分页查询入库数据管理 */
     Page<MaterialInboundDetail> selectDataList(Page<MaterialInboundDetail> page, MaterialInboundDetail detail);
+
+    /** 查询入库记录导出数据（不分页，含明细，来源类型/状态已转字典标签） */
+    List<MaterialInbound> selectExportList(MaterialInbound inbound);
+
+    /**
+     * 导出入库物料管理数据
+     * @return
+     */
+    List<MaterialInboundDetail> selectInboundDataExportList();
 }
