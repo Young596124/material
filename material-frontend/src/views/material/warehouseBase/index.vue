@@ -13,6 +13,11 @@
           <el-option v-for="dict in sourceTypeOptions" :key="dict.dictValue" :label="dict.dictLabel" :value="dict.dictValue" />
         </el-select>
       </el-form-item>
+      <el-form-item label="仓库" prop="warehouseId">
+        <el-select v-model="queryParams.warehouseId" placeholder="请选择仓库" clearable filterable size="small" style="width: 220px">
+          <el-option v-for="w in warehouseOptions" :key="w.id" :label="w.name" :value="w.id" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="货位" prop="location">
         <el-input v-model="queryParams.location" placeholder="请输入货位" clearable size="small" @keyup.enter.native="handleQuery" />
       </el-form-item>
@@ -47,6 +52,7 @@
           <span v-else>{{ dictLabel(sourceTypeOptions, scope.row.sourceType) }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="仓库" align="center" prop="warehouseName" width="120" />
       <el-table-column label="货位" align="center" prop="location" width="100" />
       <el-table-column label="入库总数" align="center" prop="totalInbound" width="90" />
       <el-table-column label="剩余数量" align="center" prop="remainingQuantity" width="90" />
@@ -89,6 +95,11 @@
         </el-form-item>
         <el-form-item label="货位" prop="location">
           <el-input v-model="form.location" placeholder="请输入货位" />
+        </el-form-item>
+        <el-form-item label="仓库" prop="warehouseId">
+          <el-select v-model="form.warehouseId" filterable placeholder="请选择仓库" style="width: 100%" @change="handleWarehouseChange">
+            <el-option v-for="w in warehouseOptions" :key="w.id" :label="w.name" :value="w.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="附件" prop="attachment">
           <el-upload
@@ -144,6 +155,7 @@ import {
   listWarehouseBase, getWarehouseBase, updateWarehouseBase,
   exportWarehouseBase, importWarehouseBase, importTemplateWarehouseBase
 } from '@/api/material/warehouseBase'
+import { selectEnabledWarehouse } from '@/api/system/warehouse'
 
 export default {
   name: 'WarehouseBase',
@@ -154,12 +166,14 @@ export default {
       total: 0,
       dataList: [],
       sourceTypeOptions: [],
+      warehouseOptions: [],
       queryParams: {
         pageNum: 1,
         pageSize: 10,
         materialCode: undefined,
         materialName: undefined,
         sourceType: undefined,
+        warehouseId: undefined,
         location: undefined
       },
       // 编辑弹窗
@@ -187,6 +201,7 @@ export default {
   },
   created() {
     this.getDicts()
+    this.getWarehouseList()
     this.getList()
   },
   methods: {
@@ -194,6 +209,15 @@ export default {
       request({ url: '/system/dict/data/type/material_source_type', method: 'get' }).then(res => {
         this.sourceTypeOptions = res.data || []
       })
+    },
+    getWarehouseList() {
+      selectEnabledWarehouse().then(res => {
+        this.warehouseOptions = res.data || []
+      })
+    },
+    handleWarehouseChange(warehouseId) {
+      const w = this.warehouseOptions.find(o => o.id === warehouseId)
+      this.form.warehouseName = w ? w.name : ''
     },
     dictLabel(options, value) {
       if (value === undefined || value === null || value === '') return ''
