@@ -27,12 +27,12 @@ public class WarehouseBaseExcelUtil
 
 
     private static final String[] HEADERS = {
-            "物料编码", "物料名称", "需求人", "项目系统", "来源类型",
+            "物料编码","物料名称", "需求人", "项目系统", "来源类型","仓库",
             "货位", "入库总数", "剩余数量", "出库数量","特殊说明","创建人","创建时间","修改人","修改时间"
     };
 
     private static final String[] HEADER = {
-            "物料名称", "需求人", "项目系统", "来源类型",
+            "物料名称", "需求人", "项目系统", "来源类型","仓库",
             "货位", "入库总数", "剩余数量", "出库数量","特殊说明"
     };
 
@@ -45,7 +45,7 @@ public class WarehouseBaseExcelUtil
     {
         try (Workbook workbook = new XSSFWorkbook())
         {
-            Sheet sheet = workbook.createSheet("1F线边仓物料基表导入模板");
+            Sheet sheet = workbook.createSheet("物料基表导入模板");
 
             // 表头样式
             CellStyle headerStyle = workbook.createCellStyle();
@@ -75,7 +75,7 @@ public class WarehouseBaseExcelUtil
             sampleFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
             sampleStyle.setFont(sampleFont);
             Row sampleRow = sheet.createRow(1);
-            String[] sample = {"示例物料", "张三", "项目A系统", "工装", "A-01-01", "0", "0", "0","特殊说明"};
+            String[] sample = {"示例物料", "张三", "项目A系统", "工装","1F线边仓", "A-01-01", "0", "0", "0","特殊说明"};
             for (int i = 0; i < sample.length; i++)
             {
                 Cell cell = sampleRow.createCell(i);
@@ -84,7 +84,7 @@ public class WarehouseBaseExcelUtil
             }
 
             // 自动列宽
-            for (int i = 0; i < HEADERS.length; i++)
+            for (int i = 0; i < HEADER.length; i++)
             {
                 sheet.autoSizeColumn(i);
                 int autoWidth = sheet.getColumnWidth(i);
@@ -92,13 +92,10 @@ public class WarehouseBaseExcelUtil
                 int minWidth = 12 * 256;
                 sheet.setColumnWidth(i, Math.max(autoWidth + 1024, minWidth));
             }
-            // 长文本列单独再加宽
-            sheet.setColumnWidth(1, 35 * 256);  // 物料名称
-            sheet.setColumnWidth(9, 40 * 256);  // 特殊备注
 
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("UTF-8");
-            String fileName = URLEncoder.encode("1F线边仓物料基表导入模板.xlsx", "UTF-8").replaceAll("\\+", "%20");
+            String fileName = URLEncoder.encode("物料基表导入模板.xlsx", "UTF-8").replaceAll("\\+", "%20");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName);
             try (OutputStream out = response.getOutputStream())
             {
@@ -115,7 +112,7 @@ public class WarehouseBaseExcelUtil
     {
         try (Workbook workbook = new XSSFWorkbook())
         {
-            Sheet sheet = workbook.createSheet("1F线边仓物料基表");
+            Sheet sheet = workbook.createSheet("物料基表");
 
             // 表头样式
             CellStyle headerStyle = workbook.createCellStyle();
@@ -159,15 +156,16 @@ public class WarehouseBaseExcelUtil
                     setCell(row, 2, b.getApplicantName(), cellStyle);
                     setCell(row, 3, b.getProjectSystem(), cellStyle);
                     setCell(row, 4, b.getSourceType(), cellStyle);
-                    setCell(row, 5, b.getLocation(), cellStyle);
-                    setCell(row, 6, b.getTotalInbound(), cellStyle);
-                    setCell(row, 7, b.getRemainingQuantity(), cellStyle);
-                    setCell(row, 8, b.getOutboundQuantity(), cellStyle);
-                    setCell(row, 9, b.getSpecialNote(), cellStyle);
-                    setCell(row, 10, b.getCreateBy(), cellStyle);
-                    setCell(row, 11, FORMATTER.format(b.getCreateTime().toInstant()), cellStyle);
-                    setCell(row, 12, b.getUpdateBy(), cellStyle);
-                    setCell(row, 13, FORMATTER.format(b.getUpdateTime().toInstant()), cellStyle);
+                    setCell(row, 5, b.getWarehouseName(), cellStyle);
+                    setCell(row, 6, b.getLocation(), cellStyle);
+                    setCell(row, 7, b.getTotalInbound(), cellStyle);
+                    setCell(row, 8, b.getRemainingQuantity(), cellStyle);
+                    setCell(row, 9, b.getOutboundQuantity(), cellStyle);
+                    setCell(row, 10, b.getSpecialNote(), cellStyle);
+                    setCell(row, 11, b.getCreateBy(), cellStyle);
+                    setCell(row, 12, FORMATTER.format(b.getCreateTime().toInstant()), cellStyle);
+                    setCell(row, 13, b.getUpdateBy(), cellStyle);
+                    setCell(row, 14, FORMATTER.format(b.getUpdateTime().toInstant()), cellStyle);
                 }
             }
 
@@ -180,14 +178,11 @@ public class WarehouseBaseExcelUtil
                 int minWidth = 12 * 256;
                 sheet.setColumnWidth(i, Math.max(autoWidth + 1024, minWidth));
             }
-            // 长文本列单独再加宽
-            sheet.setColumnWidth(1, 35 * 256);  // 物料名称
-            sheet.setColumnWidth(9, 40 * 256);  // 特殊备注
 
             // 响应输出
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("UTF-8");
-            String fileName = URLEncoder.encode("1F线边仓物料基表.xlsx", "UTF-8").replaceAll("\\+", "%20");
+            String fileName = URLEncoder.encode("物料基表.xlsx", "UTF-8").replaceAll("\\+", "%20");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName);
             try (OutputStream out = response.getOutputStream())
             {
@@ -217,11 +212,12 @@ public class WarehouseBaseExcelUtil
                 b.setApplicantName(getCellString(row, 1));
                 b.setProjectSystem(getCellString(row, 2));
                 b.setSourceType(getCellString(row, 3));
-                b.setLocation(getCellString(row, 4));
-                b.setTotalInbound(getCellInt(row, 5));
-                b.setRemainingQuantity(getCellInt(row, 6));
-                b.setOutboundQuantity(getCellInt(row, 7));
-                b.setSpecialNote(getCellString(row, 8));
+                b.setWarehouseName(getCellString(row, 4));
+                b.setLocation(getCellString(row, 5));
+                b.setTotalInbound(getCellInt(row, 6));
+                b.setRemainingQuantity(getCellInt(row, 7));
+                b.setOutboundQuantity(getCellInt(row, 8));
+                b.setSpecialNote(getCellString(row, 9));
                 result.add(b);
             }
         }
