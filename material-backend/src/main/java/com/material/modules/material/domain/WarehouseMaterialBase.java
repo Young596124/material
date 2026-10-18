@@ -55,4 +55,10 @@ public class WarehouseMaterialBase extends BaseEntity
 
     /** 出库数量 */
     private Integer outboundQuantity;
+
+    /** 仓库ID */
+    private Long warehouseId;
+
+    /** 仓库名称 */
+    private String warehouseName;
 }
