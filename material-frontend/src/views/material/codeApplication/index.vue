@@ -24,6 +24,15 @@
         </el-row>
         <el-row>
           <el-col :span="18">
+            <el-form-item label="仓库" prop="warehouseId">
+              <el-select v-model="form.warehouseId" filterable placeholder="请选择仓库" style="width: 100%" @change="handleWarehouseChange">
+                <el-option v-for="w in warehouseOptions" :key="w.id" :label="w.name" :value="w.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="18">
             <el-form-item label="需求人" required="required" prop="applicantId">
               <el-select v-model="form.applicantId" filterable placeholder="物料所属负责人" style="width: 100%" @change="handleApplicantChange">
                 <el-option v-for="u in userOptions" :key="u.userId" :label="u.nickName + (u.employeeNo ? '(' + u.employeeNo + ')' : '')" :value="u.userId" />
@@ -101,6 +110,7 @@
 <script>
 import request from '@/utils/request'
 import { addCodeApplication } from '@/api/material/codeApplication'
+import {selectEnabledWarehouse} from "@/api/system/warehouse";
 
 export default {
   name: 'CodeApplication',
@@ -109,11 +119,14 @@ export default {
       submitting: false,
       submitted: false,
       sourceTypeOptions: [],
+      warehouseOptions: [],
       userOptions: [],
       fileList: [],
       form: {
         applicantId: undefined,
         applicantName: '',
+        warehouseId: undefined,
+        warehouseName: '',
         materialName: '',
         projectSystem: '',
         sourceType: '',
@@ -123,6 +136,7 @@ export default {
       },
       rules: {
         applicantId: [{ required: true, message: '请选择需求人', trigger: 'change' }],
+        warehouseId: [{ required: true, message: '请选择仓库', trigger: 'change' }],
         materialName: [{ required: true, message: '请输入物料名称', trigger: 'blur' }],
         projectSystem: [{ required: true, message: '请输入项目系统', trigger: 'blur' }],
         sourceType: [{ required: true, message: '请选择来源类型', trigger: 'change' }],
@@ -142,12 +156,22 @@ export default {
   created() {
     this.getDicts()
     this.getUserList()
+    this.getWarehouseList()
   },
   methods: {
     getDicts() {
       request({ url: '/system/dict/data/type/material_source_type', method: 'get' }).then(res => {
         this.sourceTypeOptions = res.data || []
       })
+    },
+    getWarehouseList() {
+      selectEnabledWarehouse().then(res => {
+        this.warehouseOptions = res.data || []
+      })
+    },
+    handleWarehouseChange(warehouseId) {
+      const w = this.warehouseOptions.find(o => o.id === warehouseId)
+      this.form.warehouseName = w ? w.name : ''
     },
     getUserList() {
       request({ url: '/system/user/list', method: 'get', params: { pageSize: 999 } }).then(res => {
@@ -198,6 +222,8 @@ export default {
       this.form = {
         applicantId: undefined,
         applicantName: '',
+        warehouseId: undefined,
+        warehouseName: '',
         materialName: '',
         projectSystem: '',
         sourceType: '',
