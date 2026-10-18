@@ -45,6 +45,8 @@ public class MaterialCodeApplicationServiceImpl implements IMaterialCodeApplicat
         base.setMaterialName(dto.getMaterialName());
         base.setApplicantId(dto.getApplicantId());
         base.setApplicantName(dto.getApplicantName());
+        base.setWarehouseId(dto.getWarehouseId());
+        base.setWarehouseName(dto.getWarehouseName());
         base.setProjectSystem(dto.getProjectSystem());
         base.setSourceType(dto.getSourceType());
         base.setLocation(dto.getLocation());
