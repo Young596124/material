@@ -1,24 +1,12 @@
 package com.material.modules.material.domain;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.material.common.core.domain.BaseEntity;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * 物料编码申请对象 material_code_application
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-@TableName("material_code_application")
-public class MaterialCodeApplication extends BaseEntity
-{
-    private static final long serialVersionUID = 1L;
-
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+public class MaterialCodeApplicationDTO {
 
     /** 物料编码 */
     private String materialCode;
@@ -28,6 +16,12 @@ public class MaterialCodeApplication extends BaseEntity
 
     /** 需求人名称 */
     private String applicantName;
+
+    /** 仓库ID */
+    private Long warehouseId;
+
+    /** 仓库名称 */
+    private String warehouseName;
 
     /** 物料名称 */
     private String materialName;
