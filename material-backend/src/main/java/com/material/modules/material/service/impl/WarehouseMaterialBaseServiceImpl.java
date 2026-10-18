@@ -8,7 +8,9 @@ import com.material.modules.material.domain.WarehouseMaterialBase;
 import com.material.modules.material.mapper.WarehouseMaterialBaseMapper;
 import com.material.modules.material.service.IWarehouseMaterialBaseService;
 import com.material.modules.system.domain.SysDictData;
+import com.material.modules.system.domain.Warehouse;
 import com.material.modules.system.service.ISysDictDataService;
+import com.material.modules.system.service.IWarehouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,9 @@ public class WarehouseMaterialBaseServiceImpl implements IWarehouseMaterialBaseS
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private IWarehouseService warehouseService;
 
     /**
      * 生成物料编码：yyyyMMdd + 2位流水号
@@ -57,6 +62,8 @@ public class WarehouseMaterialBaseServiceImpl implements IWarehouseMaterialBaseS
                                 WarehouseMaterialBase::getMaterialName, base.getMaterialName())
                         .eq(base.getSourceType() != null && !"".equals(base.getSourceType()),
                                 WarehouseMaterialBase::getSourceType, base.getSourceType())
+                        .eq(base.getWarehouseId() != null,
+                                WarehouseMaterialBase::getWarehouseId, base.getWarehouseId())
                         .like(base.getLocation() != null && !"".equals(base.getLocation()),
                                 WarehouseMaterialBase::getLocation, base.getLocation())
                         .orderByDesc(WarehouseMaterialBase::getId));
@@ -117,6 +124,8 @@ public class WarehouseMaterialBaseServiceImpl implements IWarehouseMaterialBaseS
             // 将来源类型标签转换为字典值（若已是字典值则保持不变）
             b.setMaterialCode(generateMaterialCode());
             b.setSourceType(convertSourceTypeLabelToValue(b.getSourceType(), labelToValue));
+            // 根据仓库名称解析仓库ID（若已填ID则保持不变）
+            resolveWarehouseId(b);
             b.setCreateBy(nickName);
             b.setCreateTime(now);
             b.setUpdateBy(nickName);
@@ -161,11 +170,27 @@ public class WarehouseMaterialBaseServiceImpl implements IWarehouseMaterialBaseS
     }
 
     /**
+     * 导入时根据仓库名称解析仓库ID
+     */
+    private void resolveWarehouseId(WarehouseMaterialBase b)
+    {
+        if (b.getWarehouseId() != null) return;
+        String name = b.getWarehouseName();
+        if (name == null || name.trim().isEmpty()) return;
+        Warehouse w = warehouseService.selectByName(name.trim());
+        if (w != null)
+        {
+            b.setWarehouseId(w.getId());
+            b.setWarehouseName(w.getName());
+        }
+    }
+
+    /**
      * 将列表中每条记录的来源类型字典值转换为标签（用于导出展示）
      */
-    public List<WarehouseMaterialBase>  convertSourceTypeValueToLabel(List<WarehouseMaterialBase> list)
+    public void convertSourceTypeValueToLabel(List<WarehouseMaterialBase> list)
     {
-        if (list == null || list.isEmpty()) return list;
+        if (list == null || list.isEmpty()) return;
         Map<String, String> valueToLabel = new HashMap<>();
         List<SysDictData> dictList = dictDataService.selectDictDataByType(SOURCE_TYPE_DICT);
         if (dictList != null)
@@ -189,6 +214,5 @@ public class WarehouseMaterialBaseServiceImpl implements IWarehouseMaterialBaseS
                 }
             }
         }
-        return list;
     }
 }
