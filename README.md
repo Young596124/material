@@ -85,6 +85,7 @@ cd material-backend
 mvn spring-boot:run
 # 或 mvn clean package 后 java -jar target/material-management.jar
 ```
+redis注册到服务列表sc create Redis binPath= "redis安装目录" start= auto
 后端默认端口 `8080`。
 
 > 如需修改文件上传目录，调整 `application-dev.yml` 中 `material.profile` 与 `WebConfig` 的 `PROFILE_PATH`。
