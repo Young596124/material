@@ -326,3 +326,310 @@ ALTER TABLE `warehouse_material_base`
 -- 4. 注册「系统管理 - 仓库管理」菜单
 INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`)
 VALUES (103, '仓库管理', 1, 4, 'warehouse', 'system/warehouse/index', NULL, '1', '0', 'C', '0', '0', 'system:warehouse:list', 'tree', 'admin', NOW());
+
+
+-- =====================================
+-- 部门管理模块迁移脚本
+-- 1. 新增部门表 sys_dept
+-- 2. 初始化示例部门数据
+-- 3. 注册「系统管理 - 部门管理」菜单并授权给超级管理员
+-- =====================================
+USE `material_db`;
+
+-- 1. 部门表
+CREATE TABLE IF NOT EXISTS `sys_dept` (
+                                          `dept_id`     BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '部门ID',
+    `parent_id`   BIGINT(20)   DEFAULT 0 COMMENT '父部门ID',
+    `ancestors`   VARCHAR(500) DEFAULT '' COMMENT '祖级列表',
+    `dept_name`   VARCHAR(50)  NOT NULL COMMENT '部门名称',
+    `order_num`   INT(4)       DEFAULT 0 COMMENT '显示顺序',
+    `leader`      VARCHAR(30)  DEFAULT NULL COMMENT '负责人',
+    `phone`       VARCHAR(11)  DEFAULT NULL COMMENT '联系电话',
+    `email`       VARCHAR(50)  DEFAULT NULL COMMENT '邮箱',
+    `status`      CHAR(1)      DEFAULT '0' COMMENT '部门状态（0正常 1停用）',
+    `del_flag`    CHAR(1)      DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    `create_by`   VARCHAR(64)  DEFAULT '' COMMENT '创建者',
+    `create_time` DATETIME     DEFAULT NULL COMMENT '创建时间',
+    `update_by`   VARCHAR(64)  DEFAULT '' COMMENT '更新者',
+    `update_time` DATETIME     DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`dept_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门表';
+
+-- 2. 示例部门数据
+INSERT INTO `sys_dept` (`dept_id`, `parent_id`, `ancestors`, `dept_name`, `order_num`, `leader`, `phone`, `email`, `status`, `del_flag`, `create_by`, `create_time`) VALUES
+                                                                                                                                                                         (100, 0,   '0',     '总公司',  0, 'admin', '13800000000', NULL, '0', '0', 'admin', NOW()),
+                                                                                                                                                                         (101, 100, '0,100', '研发部',  1, NULL, NULL, NULL, '0', '0', 'admin', NOW()),
+                                                                                                                                                                         (102, 100, '0,100', '生产部',  2, NULL, NULL, NULL, '0', '0', 'admin', NOW()),
+                                                                                                                                                                         (103, 100, '0,100', '仓储部',  3, NULL, NULL, NULL, '0', '0', 'admin', NOW());
+
+-- 3. 注册「系统管理 - 部门管理」菜单
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`)
+VALUES (104, '部门管理', 1, 5, 'dept', 'system/dept/index', NULL, '1', '0', 'C', '0', '0', 'system:dept:list', 'tree', 'admin', NOW());
+
+-- 4. 给超级管理员补上部门管理菜单权限
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (1, 104);
+
+-- =====================================
+-- 低值易耗品管理模块迁移脚本
+-- 1. 物品类别 / 物品信息 / 库房 / 入库 / 库存 / 领用 / 退库 共7张表
+-- 2. 货物单位、消耗类型、货物等级、显示状态 字典
+-- 3. 注册「低值易耗品管理」目录及6个菜单并授权给超级管理员
+-- =====================================
+USE `material_db`;
+
+-- ----------------------------
+-- 1. 物品类别表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `consumable_category` (
+                                                     `category_id`   BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '类别ID',
+    `category_name` VARCHAR(100) NOT NULL COMMENT '类型名称',
+    `status`        CHAR(1)      DEFAULT '0' COMMENT '状态（0启用 1禁用）',
+    `order_num`     INT(4)       DEFAULT 0 COMMENT '排序',
+    `del_flag`      CHAR(1)      DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    `create_by`     VARCHAR(64)  DEFAULT '' COMMENT '创建者',
+    `create_time`   DATETIME     DEFAULT NULL COMMENT '创建时间',
+    `update_by`     VARCHAR(64)  DEFAULT '' COMMENT '更新者',
+    `update_time`   DATETIME     DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`category_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='低值易耗品-物品类别表';
+
+-- ----------------------------
+-- 2. 物品信息表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `consumable_goods` (
+                                                  `goods_id`      BIGINT(20)    NOT NULL AUTO_INCREMENT COMMENT '物品ID',
+    `category_id`   BIGINT(20)    NOT NULL COMMENT '货物类型（类别ID）',
+    `category_name` VARCHAR(100)  DEFAULT NULL COMMENT '类型名称（冗余）',
+    `goods_code`    VARCHAR(50)   NOT NULL COMMENT '货物编号（大类名称首字母大写+六位流水号）',
+    `goods_name`    VARCHAR(200)  NOT NULL COMMENT '货物名称（不可重复）',
+    `price`         DECIMAL(10,2) DEFAULT NULL COMMENT '货物单价',
+    `unit`          VARCHAR(20)   DEFAULT NULL COMMENT '货物单位（字典 consumable_unit）',
+    `consume_type`  VARCHAR(10)   DEFAULT '0' COMMENT '消耗类型（0无 1例行消耗-月度 2例行消耗-季度 3例行消耗-半年度）',
+    `show_status`   CHAR(1)       DEFAULT '0' COMMENT '显示状态（0显示 1隐藏）',
+    `level`         VARCHAR(10)   DEFAULT NULL COMMENT '等级（A B C）',
+    `description`   VARCHAR(500)  DEFAULT NULL COMMENT '描述',
+    `image`         VARCHAR(500)  DEFAULT NULL COMMENT '图片',
+    `status`        CHAR(1)       DEFAULT '0' COMMENT '状态（0启用 1禁用）',
+    `del_flag`      CHAR(1)       DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    `create_by`     VARCHAR(64)   DEFAULT '' COMMENT '创建者',
+    `create_time`   DATETIME      DEFAULT NULL COMMENT '创建时间',
+    `update_by`     VARCHAR(64)   DEFAULT '' COMMENT '更新者',
+    `update_time`   DATETIME      DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`goods_id`),
+    UNIQUE KEY `goods_code` (`goods_code`),
+    UNIQUE KEY `goods_name` (`goods_name`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='低值易耗品-物品信息表';
+
+-- ----------------------------
+-- 3. 库房表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `consumable_storehouse` (
+                                                       `storehouse_id`   BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '库房ID',
+    `storehouse_code` VARCHAR(20)  NOT NULL COMMENT '库房编号（KF+三位流水号）',
+    `storehouse_name` VARCHAR(100) NOT NULL COMMENT '仓库名称（唯一）',
+    `dept_id`         BIGINT(20)   DEFAULT NULL COMMENT '责任部门ID',
+    `dept_name`       VARCHAR(100) DEFAULT NULL COMMENT '责任部门名称（冗余）',
+    `address`         VARCHAR(200) DEFAULT NULL COMMENT '仓库地址',
+    `status`          CHAR(1)      DEFAULT '0' COMMENT '状态（0启用 1停用）',
+    `del_flag`        CHAR(1)      DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    `create_by`       VARCHAR(64)  DEFAULT '' COMMENT '创建者',
+    `create_time`     DATETIME     DEFAULT NULL COMMENT '创建时间',
+    `update_by`       VARCHAR(64)  DEFAULT '' COMMENT '更新者',
+    `update_time`     DATETIME     DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`storehouse_id`),
+    UNIQUE KEY `storehouse_code` (`storehouse_code`),
+    UNIQUE KEY `storehouse_name` (`storehouse_name`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='低值易耗品-库房表';
+
+-- ----------------------------
+-- 4. 物品入库表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `consumable_inbound` (
+                                                    `id`                 BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `inbound_code`       VARCHAR(50)  NOT NULL COMMENT '入库编号（RK+yyyyMMdd+3位流水）',
+    `category_id`        BIGINT(20)   DEFAULT NULL COMMENT '货物类型ID',
+    `category_name`      VARCHAR(100) DEFAULT NULL COMMENT '货物类型名称',
+    `goods_id`           BIGINT(20)   DEFAULT NULL COMMENT '物品ID',
+    `goods_name`         VARCHAR(200) DEFAULT NULL COMMENT '货物名称',
+    `goods_code`         VARCHAR(50)  DEFAULT NULL COMMENT '货物编号',
+    `quantity`           INT(11)      DEFAULT 0 COMMENT '入库总数',
+    `unit`               VARCHAR(20)  DEFAULT NULL COMMENT '单位',
+    `storehouse_id`      BIGINT(20)   DEFAULT NULL COMMENT '入库库房ID',
+    `storehouse_name`    VARCHAR(100) DEFAULT NULL COMMENT '库房名称',
+    `storehouse_code`    VARCHAR(20)  DEFAULT NULL COMMENT '库房编号',
+    `storehouse_address` VARCHAR(200) DEFAULT NULL COMMENT '库房地址',
+    `dept_name`          VARCHAR(100) DEFAULT NULL COMMENT '责任部门',
+    `remark`             VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    `inbound_time`       DATETIME     DEFAULT NULL COMMENT '入库时间',
+    `del_flag`           CHAR(1)      DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    `create_by`          VARCHAR(64)  DEFAULT '' COMMENT '创建者',
+    `create_time`        DATETIME     DEFAULT NULL COMMENT '创建时间',
+    `update_by`          VARCHAR(64)  DEFAULT '' COMMENT '更新者',
+    `update_time`        DATETIME     DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `inbound_code` (`inbound_code`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='低值易耗品-物品入库表';
+
+-- ----------------------------
+-- 5. 库存信息表（库房ID+物品ID唯一，重复入库叠加数量）
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `consumable_stock` (
+                                                  `id`                 BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `storehouse_id`      BIGINT(20)   NOT NULL COMMENT '库房ID',
+    `goods_id`           BIGINT(20)   NOT NULL COMMENT '物品ID',
+    `category_name`      VARCHAR(100) DEFAULT NULL COMMENT '货物类型',
+    `goods_level`        VARCHAR(10)  DEFAULT NULL COMMENT '货物等级',
+    `goods_name`         VARCHAR(200) DEFAULT NULL COMMENT '货物名称',
+    `goods_code`         VARCHAR(50)  DEFAULT NULL COMMENT '货物编号',
+    `goods_image`        VARCHAR(500) DEFAULT NULL COMMENT '货物图片',
+    `stock_quantity`     INT(11)      DEFAULT 0 COMMENT '库存数量',
+    `inbound_quantity`   INT(11)      DEFAULT 0 COMMENT '入库数量（累计）',
+    `used_quantity`      INT(11)      DEFAULT 0 COMMENT '领用数量（累计）',
+    `return_quantity`    INT(11)      DEFAULT 0 COMMENT '退库数量（累计）',
+    `unit`               VARCHAR(20)  DEFAULT NULL COMMENT '单位',
+    `location`           VARCHAR(100) DEFAULT NULL COMMENT '货位号',
+    `storehouse_name`    VARCHAR(100) DEFAULT NULL COMMENT '库房名称',
+    `storehouse_code`    VARCHAR(20)  DEFAULT NULL COMMENT '库房编号',
+    `storehouse_address` VARCHAR(200) DEFAULT NULL COMMENT '库房地址',
+    `manager`            VARCHAR(100) DEFAULT NULL COMMENT '管理员（责任部门）',
+    `create_by`          VARCHAR(64)  DEFAULT '' COMMENT '创建者',
+    `create_time`        DATETIME     DEFAULT NULL COMMENT '创建时间',
+    `update_by`          VARCHAR(64)  DEFAULT '' COMMENT '更新者',
+    `update_time`        DATETIME     DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_storehouse_goods` (`storehouse_id`, `goods_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='低值易耗品-库存信息表';
+
+-- ----------------------------
+-- 6. 物品领用表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `consumable_pick` (
+                                                 `id`                 BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `pick_code`          VARCHAR(50)  NOT NULL COMMENT '领用编号（LY+yyyyMMdd+3位流水）',
+    `category_id`        BIGINT(20)   DEFAULT NULL COMMENT '货物类型ID',
+    `category_name`      VARCHAR(100) DEFAULT NULL COMMENT '货物类型名称',
+    `goods_id`           BIGINT(20)   DEFAULT NULL COMMENT '物品ID',
+    `goods_name`         VARCHAR(200) DEFAULT NULL COMMENT '货物名称',
+    `goods_code`         VARCHAR(50)  DEFAULT NULL COMMENT '货物编号',
+    `quantity`           INT(11)      DEFAULT 0 COMMENT '领用总数',
+    `unit`               VARCHAR(20)  DEFAULT NULL COMMENT '单位',
+    `storehouse_id`      BIGINT(20)   DEFAULT NULL COMMENT '领用库房ID',
+    `storehouse_name`    VARCHAR(100) DEFAULT NULL COMMENT '库房名称',
+    `storehouse_code`    VARCHAR(20)  DEFAULT NULL COMMENT '库房编号',
+    `storehouse_address` VARCHAR(200) DEFAULT NULL COMMENT '库房地址',
+    `dept_name`          VARCHAR(100) DEFAULT NULL COMMENT '责任部门',
+    `remark`             VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    `pick_time`          DATETIME     DEFAULT NULL COMMENT '领用时间',
+    `del_flag`           CHAR(1)      DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    `create_by`          VARCHAR(64)  DEFAULT '' COMMENT '创建者',
+    `create_time`        DATETIME     DEFAULT NULL COMMENT '创建时间',
+    `update_by`          VARCHAR(64)  DEFAULT '' COMMENT '更新者',
+    `update_time`        DATETIME     DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `pick_code` (`pick_code`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='低值易耗品-物品领用表';
+
+-- ----------------------------
+-- 7. 物品退库表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `consumable_return` (
+                                                   `id`                 BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `return_code`        VARCHAR(50)  NOT NULL COMMENT '退库编号（TK+yyyyMMdd+3位流水）',
+    `category_id`        BIGINT(20)   DEFAULT NULL COMMENT '货物类型ID',
+    `category_name`      VARCHAR(100) DEFAULT NULL COMMENT '货物类型名称',
+    `goods_id`           BIGINT(20)   DEFAULT NULL COMMENT '物品ID',
+    `goods_name`         VARCHAR(200) DEFAULT NULL COMMENT '货物名称',
+    `goods_code`         VARCHAR(50)  DEFAULT NULL COMMENT '货物编号',
+    `quantity`           INT(11)      DEFAULT 0 COMMENT '退库总数',
+    `unit`               VARCHAR(20)  DEFAULT NULL COMMENT '单位',
+    `storehouse_id`      BIGINT(20)   DEFAULT NULL COMMENT '退库库房ID',
+    `storehouse_name`    VARCHAR(100) DEFAULT NULL COMMENT '库房名称',
+    `storehouse_code`    VARCHAR(20)  DEFAULT NULL COMMENT '库房编号',
+    `storehouse_address` VARCHAR(200) DEFAULT NULL COMMENT '库房地址',
+    `dept_name`          VARCHAR(100) DEFAULT NULL COMMENT '责任部门',
+    `remark`             VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    `return_time`        DATETIME     DEFAULT NULL COMMENT '退库时间',
+    `del_flag`           CHAR(1)      DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    `create_by`          VARCHAR(64)  DEFAULT '' COMMENT '创建者',
+    `create_time`        DATETIME     DEFAULT NULL COMMENT '创建时间',
+    `update_by`          VARCHAR(64)  DEFAULT '' COMMENT '更新者',
+    `update_time`        DATETIME     DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `return_code` (`return_code`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='低值易耗品-物品退库表';
+
+-- ----------------------------
+-- 8. 字典类型
+-- ----------------------------
+INSERT INTO `sys_dict_type` (`dict_name`, `dict_type`, `status`, `create_by`, `create_time`) VALUES
+                                                                                                 ('货物单位', 'consumable_unit', '0', 'admin', NOW()),
+                                                                                                 ('消耗类型', 'consumable_consume_type', '0', 'admin', NOW()),
+                                                                                                 ('货物等级', 'consumable_level', '0', 'admin', NOW()),
+                                                                                                 ('显示状态', 'consumable_show_status', '0', 'admin', NOW());
+
+-- ----------------------------
+-- 9. 字典数据
+-- ----------------------------
+INSERT INTO `sys_dict_data` (`dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`) VALUES
+-- 货物单位（值与标签一致，便于展示）
+(1, 'ml', 'ml', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(2, 'PCS', 'PCS', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(3, '个', '个', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(4, '件', '件', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(5, '克', '克', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(6, '具', '具', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(7, '包', '包', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(8, '千克', '千克', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(9, '卷', '卷', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(10, '双', '双', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(11, '只', '只', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(12, '台', '台', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(13, '块', '块', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(14, '套', '套', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(15, '平方', '平方', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(16, '张', '张', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(17, '支', '支', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(18, '本', '本', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(19, '条', '条', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(20, '根', '根', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(21, '桶', '桶', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(22, '瓶', '瓶', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(23, '盏', '盏', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(24, '盒', '盒', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(25, '箱', '箱', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(26, '米', '米', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(27, '粒', '粒', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(28, '组', '组', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(29, '节', '节', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(30, '袋', '袋', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(31, '把', '把', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+(32, '扎', '扎', 'consumable_unit', '', '', 'N', '0', 'admin', NOW()),
+-- 消耗类型
+(1, '无', '0', 'consumable_consume_type', '', 'info', 'Y', '0', 'admin', NOW()),
+(2, '例行消耗-月度', '1', 'consumable_consume_type', '', 'primary', 'N', '0', 'admin', NOW()),
+(3, '例行消耗-季度', '2', 'consumable_consume_type', '', 'success', 'N', '0', 'admin', NOW()),
+(4, '例行消耗-半年度', '3', 'consumable_consume_type', '', 'warning', 'N', '0', 'admin', NOW()),
+-- 货物等级
+(1, 'A', 'A', 'consumable_level', '', 'danger', 'N', '0', 'admin', NOW()),
+(2, 'B', 'B', 'consumable_level', '', 'warning', 'N', '0', 'admin', NOW()),
+(3, 'C', 'C', 'consumable_level', '', 'primary', 'N', '0', 'admin', NOW()),
+-- 显示状态
+(1, '显示', '0', 'consumable_show_status', '', 'success', 'Y', '0', 'admin', NOW()),
+(2, '隐藏', '1', 'consumable_show_status', '', 'info', 'N', '0', 'admin', NOW());
+
+-- ----------------------------
+-- 10. 注册「低值易耗品管理」目录及菜单
+-- ----------------------------
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`) VALUES
+                                                                                                                                                                                                                   (4,   '低值易耗品管理', 0, 3, 'consumable', NULL, NULL, '1', '0', 'M', '0', '0', '', 'box', 'admin', NOW()),
+                                                                                                                                                                                                                   (400, '物品类别', 4, 1, 'category',   'consumable/category/index',   NULL, '1', '0', 'C', '0', '0', 'consumable:category:list',   'list',     'admin', NOW()),
+                                                                                                                                                                                                                   (401, '物品信息', 4, 2, 'goods',      'consumable/goods/index',      NULL, '1', '0', 'C', '0', '0', 'consumable:goods:list',      'goods',    'admin', NOW()),
+                                                                                                                                                                                                                   (402, '库房管理', 4, 3, 'storehouse', 'consumable/storehouse/index', NULL, '1', '0', 'C', '0', '0', 'consumable:storehouse:list', 'home',     'admin', NOW()),
+                                                                                                                                                                                                                   (403, '物品入库', 4, 4, 'inbound',    'consumable/inbound/index',    NULL, '1', '0', 'C', '0', '0', 'consumable:inbound:list',    'upload',   'admin', NOW()),
+                                                                                                                                                                                                                   (404, '库存信息', 4, 5, 'stock',      'consumable/stock/index',      NULL, '1', '0', 'C', '0', '0', 'consumable:stock:list',      'chart',    'admin', NOW()),
+                                                                                                                                                                                                                   (405, '物品领用', 4, 6, 'pick',       'consumable/pick/index',       NULL, '1', '0', 'C', '0', '0', 'consumable:pick:list',       'download', 'admin', NOW()),
+                                                                                                                                                                                                                   (406, '物品退库', 4, 7, 'return',     'consumable/return/index',     NULL, '1', '0', 'C', '0', '0', 'consumable:return:list',     'refresh',  'admin', NOW());
+
+-- 授权给超级管理员
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES
+                                                       (1, 4), (1, 400), (1, 401), (1, 402), (1, 403), (1, 404), (1, 405), (1, 406);
