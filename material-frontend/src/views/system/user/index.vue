@@ -40,6 +40,11 @@
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="用户名" prop="userName" align="center" show-overflow-tooltip />
       <el-table-column label="昵称" prop="nickName" align="center" show-overflow-tooltip />
+      <el-table-column label="部门" align="center" width="120">
+        <template slot-scope="scope">
+          <span>{{ getDeptName(scope.row.deptId) || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="工号" prop="employeeNo" align="center" />
       <el-table-column label="性别" align="center">
         <template slot-scope="scope">
@@ -123,6 +128,19 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="部门" prop="deptId">
+              <el-cascader
+                v-model="form.deptId"
+                :options="deptOptions"
+                :props="deptCascaderProps"
+                :show-all-levels="false"
+                placeholder="请选择部门"
+                style="width:100%"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="角色" prop="roleId">
               <el-select v-model="form.roleId" placeholder="请选择角色" style="width:100%" clearable>
                 <el-option v-for="r in roleOptions" :key="r.roleId" :label="r.roleName" :value="r.roleId" />
@@ -150,6 +168,7 @@
 import { listUser, getUser, addUser, updateUser, delUser } from '@/api/system/user'
 import { getDicts } from '@/api/system/dict/data'
 import { allRole } from '@/api/system/role'
+import { listDept } from '@/api/system/dept'
 
 export default {
   name: 'User',
@@ -169,6 +188,18 @@ export default {
       statusOptions: [],
       // 角色列表
       roleOptions: [],
+      // 部门平铺列表(用于名称回显)
+      deptList: [],
+      // 部门树选项(用于表单级联选择)
+      deptOptions: [],
+      // 部门级联配置
+      deptCascaderProps: {
+        checkStrictly: true,
+        value: 'deptId',
+        label: 'deptName',
+        children: 'children',
+        emitPath: false
+      },
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -210,6 +241,11 @@ export default {
     allRole().then(res => {
       this.roleOptions = res.data || []
     }).catch(() => {})
+    // 加载部门列表
+    listDept().then(res => {
+      this.deptList = res.rows || []
+      this.deptOptions = this.buildDeptTree(this.deptList)
+    }).catch(() => {})
   },
   methods: {
     // 查询列表
@@ -238,6 +274,37 @@ export default {
       if (!roleId) return ''
       const r = this.roleOptions.find(o => o.roleId === roleId)
       return r ? r.roleName : ''
+    },
+    // 根据 deptId 获取部门名
+    getDeptName(deptId) {
+      if (!deptId) return ''
+      const d = this.deptList.find(o => o.deptId === deptId)
+      return d ? d.deptName : ''
+    },
+    // 构建部门树(平铺列表 → 树)
+    buildDeptTree(rows) {
+      const map = {}
+      const list = []
+      rows.forEach(item => {
+        map[item.deptId] = { ...item, children: [] }
+      })
+      rows.forEach(item => {
+        const node = map[item.deptId]
+        if (item.parentId && map[item.parentId]) {
+          map[item.parentId].children.push(node)
+        } else {
+          list.push(node)
+        }
+      })
+      const clean = arr => arr.forEach(n => {
+        if (!n.children || n.children.length === 0) {
+          n.children = undefined
+        } else {
+          clean(n.children)
+        }
+      })
+      clean(list)
+      return list
     },
     // 搜索
     handleQuery() {
@@ -321,6 +388,7 @@ export default {
     resetForm() {
       this.form = {
         userId: null,
+        deptId: undefined,
         userName: '',
         nickName: '',
         employeeNo: '',
