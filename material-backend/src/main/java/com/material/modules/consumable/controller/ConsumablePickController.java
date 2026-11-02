@@ -76,4 +76,13 @@ public class ConsumablePickController extends BaseController
         }
         ExcelExportUtil.export("物品领用", headers, rows, "低值易耗品领用记录.xlsx", response);
     }
+
+    /**
+     * 查询可退库的领用记录（含可退数量）
+     */
+    @GetMapping("/returnableList")
+    public AjaxResult returnableList()
+    {
+        return AjaxResult.success(pickService.selectReturnableList());
+    }
 }
