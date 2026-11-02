@@ -8,7 +8,7 @@
       <el-form-item label="仓库名称" prop="storehouseName">
         <el-input v-model="queryParams.storehouseName" placeholder="请输入仓库名称" clearable size="small" @keyup.enter.native="handleQuery" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="是否启用" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable size="small">
           <el-option label="启用" value="0" />
           <el-option label="停用" value="1" />
@@ -44,7 +44,7 @@
         </template>
       </el-table-column>
       <el-table-column label="仓库地址" align="center" prop="address" :show-overflow-tooltip="true" />
-      <el-table-column label="状态" align="center" prop="status" width="90">
+      <el-table-column label="是否启用" align="center" prop="status" width="90">
         <template slot-scope="scope">
           <el-switch
             v-model="scope.row.status"
@@ -81,7 +81,7 @@
         <el-form-item label="仓库地址" prop="address">
           <el-input v-model="form.address" placeholder="请输入仓库地址" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="是否启用" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio label="0">启用</el-radio>
             <el-radio label="1">停用</el-radio>
