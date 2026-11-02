@@ -30,6 +30,9 @@ public class ConsumableReturn extends BaseEntity
     /** 货物类型ID */
     private Long categoryId;
 
+    /** 关联领用记录ID（退库只能退已领用的物品） */
+    private Long pickId;
+
     /** 货物类型名称 */
     private String categoryName;
 
