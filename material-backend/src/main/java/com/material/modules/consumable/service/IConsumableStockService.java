@@ -15,4 +15,7 @@ public interface IConsumableStockService
 
     /** 查询导出列表 */
     List<ConsumableStock> selectExportList(ConsumableStock stock);
+
+    /** 查询有库存的可用库存记录（供领用选择） */
+    List<ConsumableStock> selectAvailableList(ConsumableStock stock);
 }
