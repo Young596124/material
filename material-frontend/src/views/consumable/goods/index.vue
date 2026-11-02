@@ -13,7 +13,7 @@
       <el-form-item label="货物编号" prop="goodsCode">
         <el-input v-model="queryParams.goodsCode" placeholder="请输入货物编号" clearable size="small" @keyup.enter.native="handleQuery" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="是否启用" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable size="small">
           <el-option label="启用" value="0" />
           <el-option label="禁用" value="1" />
@@ -62,18 +62,13 @@
           <span v-else>{{ dictLabel(levelOptions, scope.row.level) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="显示状态" align="center" prop="showStatus" width="90">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.showStatus === '0' ? 'success' : 'info'" size="small">{{ scope.row.showStatus === '0' ? '显示' : '隐藏' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" align="center" prop="status" width="90">
+      <el-table-column label="是否启用" align="center" prop="status" width="90">
         <template slot-scope="scope">
           <el-switch
-            v-model="scope.row.status"
-            active-value="0"
-            inactive-value="1"
-            @change="handleStatusChange(scope.row)"
+              v-model="scope.row.status"
+              active-value="0"
+              inactive-value="1"
+              @change="handleStatusChange(scope.row)"
           />
         </template>
       </el-table-column>
@@ -90,15 +85,17 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog :title="title" :visible.sync="open" width="680px" append-to-body :close-on-click-modal="false">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-row :gutter="20">
-          <el-col :span="12">
+        <el-row>
+          <el-col>
             <el-form-item label="货物类型" prop="categoryId">
               <el-select v-model="form.categoryId" placeholder="请选择货物类型" style="width: 100%">
                 <el-option v-for="c in categoryOptions" :key="c.categoryId" :label="c.categoryName" :value="c.categoryId" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+        <el-row>
+          <el-col>
             <el-form-item label="货物名称" prop="goodsName">
               <el-input v-model="form.goodsName" placeholder="请输入货物名称（不可重复）" />
             </el-form-item>
@@ -118,15 +115,17 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
+        <el-row>
+          <el-col>
             <el-form-item label="消耗类型" prop="consumeType">
               <el-select v-model="form.consumeType" placeholder="请选择消耗类型" style="width: 100%">
                 <el-option v-for="d in consumeTypeOptions" :key="d.dictValue" :label="d.dictLabel" :value="d.dictValue" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+        <el-row>
+          <el-col>
             <el-form-item label="等级" prop="level">
               <el-select v-model="form.level" placeholder="请选择等级" style="width: 100%" clearable>
                 <el-option v-for="d in levelOptions" :key="d.dictValue" :label="d.dictLabel" :value="d.dictValue" />
@@ -134,29 +133,17 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="显示状态" prop="showStatus">
-              <el-radio-group v-model="form.showStatus">
-                <el-radio label="0">显示</el-radio>
-                <el-radio label="1">隐藏</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-radio-group v-model="form.status">
-                <el-radio label="0">启用</el-radio>
-                <el-radio label="1">禁用</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入描述" />
+        <el-form-item label="是否启用" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio label="0">启用</el-radio>
+            <el-radio label="1">禁用</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="图片" prop="image">
           <file-upload v-model="form.image" list-type="picture-card" :limit="1" accept="image/*" />
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input v-model="form.description" type="textarea" :rows="5" placeholder="请输入描述" />
         </el-form-item>
       </el-form>
       <div slot="footer">
@@ -200,6 +187,7 @@ export default {
       rules: {
         categoryId: [{ required: true, message: '请选择货物类型', trigger: 'change' }],
         goodsName: [{ required: true, message: '请输入货物名称', trigger: 'blur' }],
+        price: [{ required: true, message: '请输入货物单价', trigger: 'change' }],
         unit: [{ required: true, message: '请选择货物单位', trigger: 'change' }]
       }
     }
@@ -263,7 +251,6 @@ export default {
         price: undefined,
         unit: undefined,
         consumeType: '0',
-        showStatus: '0',
         level: undefined,
         description: '',
         image: '',
