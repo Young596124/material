@@ -31,6 +31,21 @@ public class ConsumableStockServiceImpl implements IConsumableStockService
         return stockMapper.selectList(buildQuery(stock));
     }
 
+    @Override
+    public List<ConsumableStock> selectAvailableList(ConsumableStock stock)
+    {
+        return stockMapper.selectList(
+                new LambdaQueryWrapper<ConsumableStock>()
+                        .gt(ConsumableStock::getStockQuantity, 0)
+                        .like(stock.getGoodsName() != null && !"".equals(stock.getGoodsName()),
+                                ConsumableStock::getGoodsName, stock.getGoodsName())
+                        .like(stock.getGoodsCode() != null && !"".equals(stock.getGoodsCode()),
+                                ConsumableStock::getGoodsCode, stock.getGoodsCode())
+                        .like(stock.getCategoryName() != null && !"".equals(stock.getCategoryName()),
+                                ConsumableStock::getCategoryName, stock.getCategoryName())
+                        .orderByAsc(ConsumableStock::getGoodsName));
+    }
+
     /**
      * 构建查询条件
      */
