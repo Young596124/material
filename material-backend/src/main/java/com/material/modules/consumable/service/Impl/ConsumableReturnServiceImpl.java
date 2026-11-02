@@ -6,10 +6,12 @@ import com.material.common.exception.ServiceException;
 import com.material.common.utils.DateUtils;
 import com.material.common.utils.SecurityUtils;
 import com.material.modules.consumable.domain.ConsumableGoods;
+import com.material.modules.consumable.domain.ConsumablePick;
 import com.material.modules.consumable.domain.ConsumableReturn;
 import com.material.modules.consumable.domain.ConsumableStock;
 import com.material.modules.consumable.domain.ConsumableStorehouse;
 import com.material.modules.consumable.mapper.ConsumableGoodsMapper;
+import com.material.modules.consumable.mapper.ConsumablePickMapper;
 import com.material.modules.consumable.mapper.ConsumableReturnMapper;
 import com.material.modules.consumable.mapper.ConsumableStockMapper;
 import com.material.modules.consumable.mapper.ConsumableStorehouseMapper;
@@ -30,6 +32,9 @@ public class ConsumableReturnServiceImpl implements IConsumableReturnService
 {
     @Autowired
     private ConsumableReturnMapper returnMapper;
+
+    @Autowired
+    private ConsumablePickMapper pickMapper;
 
     @Autowired
     private ConsumableGoodsMapper goodsMapper;
@@ -69,40 +74,49 @@ public class ConsumableReturnServiceImpl implements IConsumableReturnService
     @Transactional(rollbackFor = Exception.class)
     public int insertReturn(ConsumableReturn returnRecord)
     {
-        if (returnRecord.getGoodsId() == null)
+        // 退库只能针对已领用的物品，必须选择领用记录
+        if (returnRecord.getPickId() == null)
         {
-            throw new ServiceException("请选择货物名称");
-        }
-        if (returnRecord.getStorehouseId() == null)
-        {
-            throw new ServiceException("请选择退库库房");
+            throw new ServiceException("请选择领用记录");
         }
         if (returnRecord.getQuantity() == null || returnRecord.getQuantity() <= 0)
         {
             throw new ServiceException("退库总数必须大于0");
         }
-        // 冗余货物信息
-        ConsumableGoods goods = goodsMapper.selectById(returnRecord.getGoodsId());
+        ConsumablePick pick = pickMapper.selectById(returnRecord.getPickId());
+        if (pick == null)
+        {
+            throw new ServiceException("领用记录不存在");
+        }
+        // 校验可退数量 = 领用总数 - 已退库数量
+        int returnable = getReturnableQuantity(pick);
+        if (returnRecord.getQuantity() > returnable)
+        {
+            throw new ServiceException("退库数量不能超过可退数量，当前可退：" + returnable);
+        }
+        // 货物与库房信息全部取自领用记录，退到原库房
+        returnRecord.setGoodsId(pick.getGoodsId());
+        returnRecord.setCategoryId(pick.getCategoryId());
+        returnRecord.setCategoryName(pick.getCategoryName());
+        returnRecord.setGoodsName(pick.getGoodsName());
+        returnRecord.setGoodsCode(pick.getGoodsCode());
+        returnRecord.setUnit(pick.getUnit());
+        returnRecord.setStorehouseId(pick.getStorehouseId());
+        returnRecord.setStorehouseName(pick.getStorehouseName());
+        returnRecord.setStorehouseCode(pick.getStorehouseCode());
+        returnRecord.setStorehouseAddress(pick.getStorehouseAddress());
+        returnRecord.setDeptName(pick.getDeptName());
+        // 回退库存到原库房
+        ConsumableGoods goods = goodsMapper.selectById(pick.getGoodsId());
+        ConsumableStorehouse storehouse = storehouseMapper.selectById(pick.getStorehouseId());
         if (goods == null)
         {
-            throw new ServiceException("所选货物不存在");
+            throw new ServiceException("货物不存在");
         }
-        returnRecord.setCategoryId(goods.getCategoryId());
-        returnRecord.setCategoryName(goods.getCategoryName());
-        returnRecord.setGoodsName(goods.getGoodsName());
-        returnRecord.setGoodsCode(goods.getGoodsCode());
-        returnRecord.setUnit(goods.getUnit());
-        // 冗余库房信息
-        ConsumableStorehouse storehouse = storehouseMapper.selectById(returnRecord.getStorehouseId());
         if (storehouse == null)
         {
-            throw new ServiceException("所选库房不存在");
+            throw new ServiceException("原库房不存在");
         }
-        returnRecord.setStorehouseName(storehouse.getStorehouseName());
-        returnRecord.setStorehouseCode(storehouse.getStorehouseCode());
-        returnRecord.setStorehouseAddress(storehouse.getAddress());
-        returnRecord.setDeptName(storehouse.getDeptName());
-        // 回退库存
         addStock(goods, storehouse, returnRecord.getQuantity());
         // 生成退库编号
         returnRecord.setReturnCode(generateReturnCode());
@@ -129,6 +143,26 @@ public class ConsumableReturnServiceImpl implements IConsumableReturnService
                         .eq(returnRecord.getStorehouseId() != null,
                                 ConsumableReturn::getStorehouseId, returnRecord.getStorehouseId())
                         .orderByDesc(ConsumableReturn::getCreateTime));
+    }
+
+    /**
+     * 计算领用记录的可退数量（领用总数 - 该记录已退库数量）
+     */
+    private int getReturnableQuantity(ConsumablePick pick)
+    {
+        List<ConsumableReturn> returnedList = returnMapper.selectList(
+                new LambdaQueryWrapper<ConsumableReturn>()
+                        .eq(ConsumableReturn::getPickId, pick.getId()));
+        int returned = 0;
+        if (returnedList != null)
+        {
+            for (ConsumableReturn r : returnedList)
+            {
+                returned += r.getQuantity() == null ? 0 : r.getQuantity();
+            }
+        }
+        int qty = pick.getQuantity() == null ? 0 : pick.getQuantity();
+        return qty - returned;
     }
 
     /**
