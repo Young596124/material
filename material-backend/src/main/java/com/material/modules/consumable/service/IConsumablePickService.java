@@ -21,4 +21,7 @@ public interface IConsumablePickService
 
     /** 查询导出列表 */
     List<ConsumablePick> selectExportList(ConsumablePick pick);
+
+    /** 查询可退库的领用记录（含可退数量） */
+    List<ConsumablePick> selectReturnableList();
 }
