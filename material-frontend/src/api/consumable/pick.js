@@ -17,6 +17,14 @@ export function getPick(id) {
   })
 }
 
+// 查询可退库的领用记录（含可退数量）
+export function listReturnablePicks() {
+  return request({
+    url: '/consumable/pick/returnableList',
+    method: 'get'
+  })
+}
+
 // 新增领用
 export function addPick(data) {
   return request({
