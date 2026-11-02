@@ -44,53 +44,75 @@
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <!-- 新增领用弹窗 -->
+    <!-- 新增领用弹窗：只能从库存领用，库房取自库存记录 -->
     <el-dialog :title="title" :visible.sync="open" width="620px" append-to-body :close-on-click-modal="false">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="货物类型" prop="categoryId">
-          <el-select v-model="form.categoryId" placeholder="请先选择货物类型" style="width: 100%" @change="handleCategoryChange">
-            <el-option v-for="c in categoryOptions" :key="c.categoryId" :label="c.categoryName" :value="c.categoryId" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="货物名称" prop="goodsId">
-          <el-select v-model="form.goodsId" placeholder="请选择货物名称" style="width: 100%" :disabled="!form.categoryId" @change="handleGoodsChange">
-            <el-option v-for="g in goodsOptions" :key="g.goodsId" :label="g.goodsName" :value="g.goodsId" />
+        <el-form-item label="领用货物" prop="stockId">
+          <el-select
+              v-model="form.stockId"
+              filterable
+              placeholder="请选择领用货物（仅显示有库存的记录）"
+              style="width: 100%"
+              @change="handleStockChange"
+          >
+            <el-option
+                v-for="s in stockOptions"
+                :key="s.id"
+                :label="s.goodsName + '（' + s.storehouseName + '，可用 ' + s.stockQuantity + s.unit + '）'"
+                :value="s.id"
+            />
           </el-select>
         </el-form-item>
         <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="货物类型">
+              <el-input v-model="form.categoryName" disabled />
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="货物编号">
               <el-input v-model="form.goodsCode" disabled />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="单位">
-              <el-input v-model="form.unit" disabled />
+            <el-form-item label="可用库存">
+              <el-input v-model="form.availableQuantity" disabled>
+                <template slot="append">{{ form.unit }}</template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="领用总数" prop="quantity">
+              <el-input-number v-model="form.quantity" :min="1" :max="form.availableQuantity || 1" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="领用总数" prop="quantity">
-          <el-input-number v-model="form.quantity" :min="1" :max="999999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="领用库房" prop="storehouseId">
-          <el-input v-model="form.storehouseName" placeholder="请选择领用库房" readonly style="width: calc(100% - 90px)" />
-          <el-button icon="el-icon-search" size="small" style="margin-left: 6px" @click="openStorehouseDialog">选择</el-button>
-        </el-form-item>
         <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="库房名称">
+              <el-input v-model="form.storehouseName" disabled />
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="库房编号">
               <el-input v-model="form.storehouseCode" disabled />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="责任部门">
               <el-input v-model="form.deptName" disabled />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="库房地址">
+              <el-input v-model="form.storehouseAddress" disabled />
+            </el-form-item>
+          </el-col>
         </el-row>
-        <el-form-item label="库房地址">
-          <el-input v-model="form.storehouseAddress" disabled />
-        </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
@@ -100,27 +122,12 @@
         <el-button @click="open = false">取 消</el-button>
       </div>
     </el-dialog>
-
-    <!-- 库房选择弹框（列表单选） -->
-    <el-dialog title="选择领用库房" :visible.sync="storehouseOpen" width="720px" append-to-body :close-on-click-modal="false">
-      <el-table :data="storehouseOptions" highlight-current-row @row-click="handleStorehouseSelect" size="small" max-height="380">
-        <el-table-column label="库房名称" align="center" prop="storehouseName" :show-overflow-tooltip="true" />
-        <el-table-column label="库房编号" align="center" prop="storehouseCode" width="100" />
-        <el-table-column label="库房地址" align="center" prop="address" :show-overflow-tooltip="true" />
-        <el-table-column label="责任部门" align="center" prop="deptName" width="120" :show-overflow-tooltip="true" />
-      </el-table>
-      <div slot="footer">
-        <el-button @click="storehouseOpen = false">关 闭</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script>
 import { listPick, addPick, exportPick } from '@/api/consumable/pick'
-import { selectEnabledCategory } from '@/api/consumable/category'
-import { listGoodsByCategory } from '@/api/consumable/goods'
-import { selectEnabledStorehouse } from '@/api/consumable/storehouse'
+import { listAvailableStock } from '@/api/consumable/stock'
 
 export default {
   name: 'ConsumablePick',
@@ -130,10 +137,7 @@ export default {
       showSearch: true,
       total: 0,
       dataList: [],
-      categoryOptions: [],
-      goodsOptions: [],
-      storehouseOptions: [],
-      storehouseOpen: false,
+      stockOptions: [],
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -144,29 +148,15 @@ export default {
       title: '',
       form: {},
       rules: {
-        categoryId: [{ required: true, message: '请选择货物类型', trigger: 'change' }],
-        goodsId: [{ required: true, message: '请选择货物名称', trigger: 'change' }],
-        quantity: [{ required: true, message: '请输入领用总数', trigger: 'blur' }],
-        storehouseId: [{ required: true, message: '请选择领用库房', trigger: 'change' }]
+        stockId: [{ required: true, message: '请选择领用货物', trigger: 'change' }],
+        quantity: [{ required: true, message: '请输入领用总数', trigger: 'blur' }]
       }
     }
   },
   created() {
-    this.getCategoryList()
-    this.getStorehouseList()
     this.getList()
   },
   methods: {
-    getCategoryList() {
-      selectEnabledCategory().then(res => {
-        this.categoryOptions = res.data || []
-      })
-    },
-    getStorehouseList() {
-      selectEnabledStorehouse().then(res => {
-        this.storehouseOptions = res.data || []
-      })
-    },
     getList() {
       this.loading = true
       listPick(this.queryParams).then(res => {
@@ -184,19 +174,22 @@ export default {
     },
     reset() {
       this.form = {
-        categoryId: undefined,
+        stockId: undefined,
         goodsId: undefined,
+        storehouseId: undefined,
+        categoryName: '',
+        goodsName: '',
         goodsCode: '',
         unit: '',
+        availableQuantity: 0,
         quantity: 1,
-        storehouseId: undefined,
         storehouseName: '',
         storehouseCode: '',
         storehouseAddress: '',
         deptName: '',
         remark: ''
       }
-      this.goodsOptions = []
+      this.stockOptions = []
       this.$nextTick(() => {
         this.$refs.form && this.$refs.form.clearValidate()
       })
@@ -205,47 +198,41 @@ export default {
       this.reset()
       this.title = '新增领用'
       this.open = true
+      // 加载有库存的货物记录，库房信息随库存记录带出
+      listAvailableStock({}).then(res => {
+        this.stockOptions = res.data || []
+      })
     },
-    // 货物类型变化：加载该类别下的物品
-    handleCategoryChange(categoryId) {
-      this.form.goodsId = undefined
-      this.form.goodsCode = ''
-      this.form.unit = ''
-      this.goodsOptions = []
-      if (categoryId) {
-        listGoodsByCategory(categoryId).then(res => {
-          this.goodsOptions = res.data || []
-        })
-      }
-    },
-    // 货物名称变化：自动带出货物编号、单位
-    handleGoodsChange(goodsId) {
-      const goods = this.goodsOptions.find(g => g.goodsId === goodsId)
-      if (goods) {
-        this.form.goodsCode = goods.goodsCode
-        this.form.unit = goods.unit
-      } else {
-        this.form.goodsCode = ''
-        this.form.unit = ''
-      }
-    },
-    // 打开库房选择弹框
-    openStorehouseDialog() {
-      this.storehouseOpen = true
-    },
-    // 库房行点击：自动带入库房信息
-    handleStorehouseSelect(row) {
-      this.form.storehouseId = row.storehouseId
-      this.form.storehouseName = row.storehouseName
-      this.form.storehouseCode = row.storehouseCode
-      this.form.storehouseAddress = row.address
-      this.form.deptName = row.deptName
-      this.storehouseOpen = false
+    // 选择库存记录：自动带出货物与库房信息
+    handleStockChange(stockId) {
+      const s = this.stockOptions.find(item => item.id === stockId)
+      if (!s) return
+      this.form.goodsId = s.goodsId
+      this.form.storehouseId = s.storehouseId
+      this.form.categoryName = s.categoryName
+      this.form.goodsName = s.goodsName
+      this.form.goodsCode = s.goodsCode
+      this.form.unit = s.unit
+      this.form.availableQuantity = s.stockQuantity
+      this.form.quantity = 1
+      this.form.storehouseName = s.storehouseName
+      this.form.storehouseCode = s.storehouseCode
+      this.form.storehouseAddress = s.storehouseAddress
+      this.form.deptName = s.manager
     },
     submitForm() {
       this.$refs.form.validate(valid => {
         if (!valid) return
-        addPick(this.form).then(() => {
+        if (this.form.quantity > this.form.availableQuantity) {
+          this.$message.error('领用数量不能大于库存数量，当前可用库存：' + this.form.availableQuantity)
+          return
+        }
+        addPick({
+          goodsId: this.form.goodsId,
+          storehouseId: this.form.storehouseId,
+          quantity: this.form.quantity,
+          remark: this.form.remark
+        }).then(() => {
           this.$message.success('领用成功')
           this.open = false
           this.getList()
