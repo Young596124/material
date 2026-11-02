@@ -7,10 +7,12 @@ import com.material.common.utils.DateUtils;
 import com.material.common.utils.SecurityUtils;
 import com.material.modules.consumable.domain.ConsumableGoods;
 import com.material.modules.consumable.domain.ConsumablePick;
+import com.material.modules.consumable.domain.ConsumableReturn;
 import com.material.modules.consumable.domain.ConsumableStock;
 import com.material.modules.consumable.domain.ConsumableStorehouse;
 import com.material.modules.consumable.mapper.ConsumableGoodsMapper;
 import com.material.modules.consumable.mapper.ConsumablePickMapper;
+import com.material.modules.consumable.mapper.ConsumableReturnMapper;
 import com.material.modules.consumable.mapper.ConsumableStockMapper;
 import com.material.modules.consumable.mapper.ConsumableStorehouseMapper;
 import com.material.modules.consumable.service.IConsumablePickService;
@@ -19,8 +21,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 低值易耗品-物品领用 业务实现
@@ -39,6 +44,9 @@ public class ConsumablePickServiceImpl implements IConsumablePickService
 
     @Autowired
     private ConsumableStockMapper stockMapper;
+
+    @Autowired
+    private ConsumableReturnMapper returnMapper;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -129,6 +137,39 @@ public class ConsumablePickServiceImpl implements IConsumablePickService
                         .eq(pick.getStorehouseId() != null,
                                 ConsumablePick::getStorehouseId, pick.getStorehouseId())
                         .orderByDesc(ConsumablePick::getCreateTime));
+    }
+
+    @Override
+    public List<ConsumablePick> selectReturnableList()
+    {
+        // 查询全部领用记录
+        List<ConsumablePick> picks = pickMapper.selectList(
+                new LambdaQueryWrapper<ConsumablePick>()
+                        .orderByDesc(ConsumablePick::getCreateTime));
+        // 按领用记录汇总已退库数量
+        Map<Long, Integer> returnedMap = new HashMap<>();
+        List<ConsumableReturn> returns = returnMapper.selectList(null);
+        for (ConsumableReturn r : returns)
+        {
+            if (r.getPickId() != null)
+            {
+                returnedMap.merge(r.getPickId(), r.getQuantity() == null ? 0 : r.getQuantity(), Integer::sum);
+            }
+        }
+        // 只返回仍可退库的领用记录
+        List<ConsumablePick> result = new ArrayList<>();
+        for (ConsumablePick p : picks)
+        {
+            int qty = p.getQuantity() == null ? 0 : p.getQuantity();
+            int returned = returnedMap.getOrDefault(p.getId(), 0);
+            int returnable = qty - returned;
+            if (returnable > 0)
+            {
+                p.setReturnableQuantity(returnable);
+                result.add(p);
+            }
+        }
+        return result;
     }
 
     /**
