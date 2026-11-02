@@ -2,6 +2,7 @@ package com.material.modules.consumable.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.material.common.core.controller.BaseController;
+import com.material.common.core.domain.AjaxResult;
 import com.material.common.core.page.TableDataInfo;
 import com.material.common.utils.ExcelExportUtil;
 import com.material.modules.consumable.domain.ConsumableStock;
@@ -36,6 +37,16 @@ public class ConsumableStockController extends BaseController
         Page<ConsumableStock> result = stockService.selectList(page, stock);
         return getDataTable(result);
     }
+
+    /**
+     * 查询有库存的可用库存记录（供领用选择，库房由库存记录决定）
+     */
+    @GetMapping("/availableList")
+    public AjaxResult availableList(ConsumableStock stock)
+    {
+        return AjaxResult.success(stockService.selectAvailableList(stock));
+    }
+
 
     /**
      * 导出库存信息
